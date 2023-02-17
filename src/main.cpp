@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <windows.h>
 #include "utils/wav.h"
 #include "dsp/mod/gfsk.h"
 #include "dsp/taps/from_array.h"
@@ -9,16 +8,15 @@
 #include "dsp/convert/mono_to_stereo.h"
 #include "dsp/buffer/packer.h"
 #include <RtAudio.h>
+#include <unistd.h>
 
 
-#define SAMPLERATE  48e3
-#define SYMBOLRATE  1200.0
-#define DEVIATION   (SYMBOLRATE/2.0f)
+#define SAMPLERATE  192e3
+#define SYMBOLRATE  800.0
+#define DEVIATION   800.0
 #define TX_FREQ     19e3
 
 #define FRAME_SIZE  1200
-
-#define QPSK_AMP    0.70710678118f
 
 int callback(void* outputBuffer, void* inputBuffer, unsigned int nBufferFrames, double streamTime, RtAudioStreamStatus status, void* userData) {
     dsp::stream<dsp::stereo_t>* stream = (dsp::stream<dsp::stereo_t>*)userData;
@@ -63,11 +61,32 @@ int main() {
     // Write data to input
     while (true) {
         for (int i = 0; i < FRAME_SIZE; i++) {
-            input.writeBuf[i] = (rand() % 2) ? 1.0f : -1.0f;
+            input.writeBuf[i] = ((rand() % 2) ? 1.0f : -1.0f) * 120.0;
         }
         input.swap(FRAME_SIZE);
         printf("Swapped\n");
     }
+
+    // for (int i = 0; i < FRAME_SIZE; i++) {
+    //     input.writeBuf[i] = ((rand() % 2) ? 1.0f : -1.0f) * 18.0;
+    // }
+    // input.swap(FRAME_SIZE);
+
+    // sleep(10);
+
+    // wav::Writer writer(2, SAMPLERATE);
+    // writer.open("output.wav");
+    // int len = xlate.out.read();
+    // writer.write((float*)xlate.out.readBuf, len);
+    // writer.close();
+    // printf("Wrote %d samples\n", len);
+
+    mod.stop();
+    xlate.stop();
+    c2r.stop();
+    m2s.stop();
+    packer.stop();
+
     
     return 0;
 }
