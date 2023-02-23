@@ -1,4 +1,5 @@
 #include "tx.h"
+#include "dsp/taps/band_pass.h"
 
 TX::TX(double samplerate, double symbolrate, double deviation, double freq) {
     this->samplerate = samplerate;
@@ -7,8 +8,12 @@ TX::TX(double samplerate, double symbolrate, double deviation, double freq) {
     this->freq = freq;
 
     // Init DSP
-    mod.init(&input, symbolrate, samplerate, 0.6, 31, deviation);
-    xlate.init(&mod.out, freq, samplerate);
+    //mod.init(&input, symbolrate, samplerate, 0.6, 31, deviation);
+    
+    r2c.init(&input);
+    bandpass = dsp::taps::bandPass<dsp::complex_t>(100.0, 2900.0, 100.0, samplerate);
+    fir.init(&r2c.out, bandpass);
+    xlate.init(&fir.out, freq, samplerate);
     c2r.init(&xlate.out);
     m2s.init(&c2r.out);
     packer.init(&m2s.out, 1000);
@@ -23,7 +28,7 @@ TX::TX(double samplerate, double symbolrate, double deviation, double freq) {
     opts.streamName = "UCS";
 
     // Open stream
-    audio.openStream(&parameters, NULL, RTAUDIO_FLOAT32, samplerate, &bufferFrames, &callback, &packer.out, &opts);
+    audio.openStream(&parameters, NULL, RTAUDIO_FLOAT32, samplerate, &bufferFrames, &callback, this, &opts);
     packer.setSampleCount(bufferFrames);
 }
 
@@ -34,7 +39,9 @@ void TX::start() {
     audio.startStream();
 
     // Start DSP
-    mod.start();
+    //mod.start();
+    r2c.start();
+    fir.start();
     xlate.start();
     c2r.start();
     m2s.start();
@@ -52,7 +59,9 @@ void TX::stop() {
     packer.out.clearWriteStop();
 
     // Stop DSP
-    mod.stop();
+    //mod.stop();
+    r2c.stop();
+    fir.stop();
     xlate.stop();
     c2r.stop();
     m2s.stop();

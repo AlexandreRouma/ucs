@@ -6,6 +6,9 @@
 #include "dsp/convert/complex_to_real.h"
 #include "dsp/convert/mono_to_stereo.h"
 #include "dsp/buffer/packer.h"
+#include "dsp/convert/real_to_complex.h"
+#include "dsp/filter/fir.h"
+#include "dsp/mod/quadrature.h"
 #include <RtAudio.h>
 
 class TX {
@@ -26,7 +29,10 @@ private:
     double freq;
     bool running = false;
 
-    dsp::mod::GFSK mod;
+    //dsp::mod::GFSK mod;
+    dsp::convert::RealToComplex r2c;
+    dsp::filter::FIR<dsp::complex_t, dsp::complex_t> fir;
+    dsp::tap<dsp::complex_t> bandpass;
     dsp::channel::FrequencyXlator xlate;
     dsp::convert::ComplexToReal c2r;
     dsp::convert::MonoToStereo m2s;
